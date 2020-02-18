@@ -12,7 +12,7 @@ export class ApiService {
   constructor(private http: HttpClient) { }
 
   getVehicles(key: string): Observable<Vehicle[]> {
-    const url = 'https://app.ecofleet.com/seeme/Api/Vehicles/getLastData?key=' + key + '&json';
+    const url = 'https://cors-anywhere.herokuapp.com/https://app.ecofleet.com/seeme/Api/Vehicles/getLastData?key=' + key + '&json';
     return this.http
     .get<Vehicle[]>(url)
     // @ts-ignore
@@ -21,7 +21,7 @@ export class ApiService {
 
   getDataFromVehicle(key: string, objectId: string, startAt: string, endAt: string): Observable<Snapshot[]> {
     
-    const url = 'https://app.ecofleet.com/seeme/Api/Vehicles/getRawData?' +
+    const url = 'https://cors-anywhere.herokuapp.com/https://app.ecofleet.com/seeme/Api/Vehicles/getRawData?' +
       'objectId=' + objectId + 
       '&begTimestamp=' + startAt + 
       '&endTimestamp=' + endAt + 
