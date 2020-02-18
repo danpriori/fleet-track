@@ -1,0 +1,79 @@
+<div class="toolbar" role="banner">
+  <span class="mat-headline">Fleet track test</span>
+</div>
+
+<div class="content" role="main">
+  <mat-card>
+    <mat-card-content>
+      <mat-form-field class="api-input">
+        <mat-placeholder>API Key</mat-placeholder>
+        <input #apiKey matInput type="search">
+        <button [disabled]="isLoadingVehicles || isLoadingVehicleDetails || apiKey.value == '' " (click)="getVehicles(apiKey.value)" mat-button matSuffix mat-stroked-button aria-label="search">
+          Go!
+        </button>
+        <div class="spinner-container">
+          <mat-spinner [diameter]="40" *ngIf="isLoadingVehicles" ></mat-spinner>
+        </div>
+      </mat-form-field>
+      <div class="vehicleslist-container">
+        <table mat-table [dataSource]="dataVehicles" class="mat-elevation-z8">
+          <ng-container matColumnDef="objectName">
+            <th mat-header-cell *matHeaderCellDef> Name </th>
+            <td mat-cell *matCellDef="let vehicle"> {{vehicle.objectName}} </td>
+          </ng-container>
+        
+          <ng-container matColumnDef="speed">
+            <th mat-header-cell *matHeaderCellDef> Speed </th>
+            <td mat-cell *matCellDef="let vehicle"> {{vehicle.speed}} </td>
+          </ng-container>
+        
+          <ng-container matColumnDef="timestamp">
+            <th mat-header-cell *matHeaderCellDef> Last update </th>
+            <td mat-cell *matCellDef="let vehicle"> {{vehicle.timestamp | customDate}} </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedVehiclesColumns; sticky: true"></tr>
+          <tr mat-row (click)="selectVehicle(vehicle)" 
+            [style.background]="vehicleSelected ? vehicleSelected.objectId == vehicle.objectId ? 'lightblue' : '' : ''" 
+            *matRowDef="let vehicle; columns: displayedVehiclesColumns;">
+          </tr>
+        </table>
+      </div>
+    </mat-card-content>
+    <mat-card-content>
+      <mat-form-field class="api-input">
+        <mat-placeholder>Choose date range</mat-placeholder>
+        <input matInput type="text" ngxDaterangepickerMd dateLimit="1"
+        #date
+        [(ngModel)]="dateSelected" 
+        [locale]="{applyLabel: 'Apply'}"
+        class="date-control"/>
+        <button [disabled]="isLoadingVehicles || isLoadingVehicleDetails || date.value == '' || (dateSelected && (dateSelected.startDate == null || dateSelected.endDate == null))" (click)="getDataFromSelectedVehicle(dateSelected)" mat-button matSuffix mat-stroked-button aria-label="search">
+          Go!
+        </button>
+        <div class="spinner-container" *ngIf="isLoadingVehicleDetails" >
+          <label>{{progressLabel}}</label>
+          <mat-progress-spinner [value]="loadingVehicleDetailsProgressValue" [diameter]="40" ></mat-progress-spinner>
+        </div>
+      </mat-form-field>
+      <table mat-table [dataSource]="dataVehicleDetails">
+        <ng-container matColumnDef="label">
+          <th mat-header-cell *matHeaderCellDef> Info </th>
+          <td mat-cell *matCellDef="let details"> {{details.label}} </td>
+        </ng-container>
+      
+        <ng-container matColumnDef="value">
+          <th mat-header-cell *matHeaderCellDef> Value </th>
+          <td mat-cell *matCellDef="let details"> {{details.value}} </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedVehiclesDataColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let details; columns: displayedVehiclesDataColumns;">
+        </tr>
+      </table>
+      
+    </mat-card-content>
+  </mat-card>
+  <div #mapContainer id="map"></div>
+</div>
+<router-outlet></router-outlet>
