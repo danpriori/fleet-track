@@ -45,7 +45,9 @@ export class AppComponent implements AfterViewInit {
   routes: Array<google.maps.DirectionsRenderer> = new Array<google.maps.DirectionsRenderer>();
   bounds: google.maps.LatLngBounds = new google.maps.LatLngBounds();
   title: string = 'fleet-project';
-  
+  timeoutLimit: number = 1200;
+  daysLimit: number = 1;
+   
   // Tallinn
   lat: number = 59.4339;
   lng: number = 24.7281;
@@ -257,7 +259,7 @@ export class AppComponent implements AfterViewInit {
             callback(response, status, count, points, typeOfCalc);
           });
           
-        }, 1200 * count);
+        }, app.timeoutLimit * count);
       }(serviceOptions, serviceCallback, i, typeOfCalc, this);
     }
   } 
