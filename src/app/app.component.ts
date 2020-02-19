@@ -3,7 +3,7 @@ import { ApiService } from './services/api.service';
 import { Vehicle } from './interfaces/vehicle';
 import { Snapshot } from './interfaces/snapshot';
 import { Moment } from 'moment';
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +20,8 @@ export class AppComponent implements AfterViewInit {
       this.progressLabel = next.label + value + "%";
     });
   }
+  @ViewChild('mapContainer', {static: false}) gmap: ElementRef;
+
   loadingVehicleDetailsProgress: Subject<any>;
   loadingVehicleDetailsProgressValue: number = 0;
   apiKey: string;
@@ -38,7 +40,6 @@ export class AppComponent implements AfterViewInit {
 
   progressLabel: string = "";
 
-  @ViewChild('mapContainer', {static: false}) gmap: ElementRef;
 
   vehicleMarkers: Array<google.maps.Marker> = new Array<google.maps.Marker>();
   stopMarkers: Array<google.maps.Marker> = new Array<google.maps.Marker>();
@@ -117,11 +118,8 @@ export class AppComponent implements AfterViewInit {
 
       let coordinates = [];
       let parts = [];
-
-      // get the stops
       let stops = [];
       let turnToStopSnapshot = false;
-      let totalDistance: number = 0;
 
       // process snapshots regarding coordinates and stops
       this.dataSnapshots.forEach(snapshot => {
@@ -151,39 +149,44 @@ export class AppComponent implements AfterViewInit {
       this.dataVehicleDetails[1]['value'] = stops.length;
       this.updateStopPointsMap(stops);
       
-      if (coordinates.length > 0) {
-
-        parts = [];
-        for (let i = 0, max = 25 - 1; i < coordinates.length; i = i + max) {
-          parts.push(coordinates.slice(i, i + max + 1));
-        }
-    
-        this.calculateRoutes(parts, "totalRoute", "blue", 4, 1, (totalDistance: number) => {
-          this.dataVehicleDetails[0]['value'] = (totalDistance / 1000).toFixed(2) + 'km';
-          if (stops.length > 0) {
-            parts = [];
-            for (let i = 0, max = 25 - 1; i < stops.length; i = i + max) {
-              parts.push(stops.slice(i, i + max + 1));
-            }
-            this.startShortestRoutes(parts, "shortestRoute", "red", 8, 2, (shortestDistance: number) => {
-              this.isLoadingVehicleDetails = false;
-              this.dataVehicleDetails[2]['value'] = (shortestDistance / 1000).toFixed(2) + 'km';
-            })
-          } else {
-            this.isLoadingVehicleDetails = false;
-          }
-        });
-      } else if (coordinates.length == 0 && stops.length > 0) {
-        this.isLoadingVehicleDetails = false;
-        this.dataVehicleDetails[0]['value'] = this.labels.noData;
-        this.dataVehicleDetails[2]['value'] = this.labels.noData;
-      } else if (coordinates.length == 0 && stops.length == 0) {
-        this.isLoadingVehicleDetails = false;
-        this.dataVehicleDetails[0]['value'] = this.labels.noData;
-        this.dataVehicleDetails[1]['value'] = this.labels.noData;
-        this.dataVehicleDetails[2]['value'] = this.labels.noData;
-      }
+      // start calculating routes
+      this.startCalculatingRoutes(coordinates, parts, stops);
     });
+  }
+
+  startCalculatingRoutes(coordinates: Array<object>, parts: Array<object>, stops: Array<object>): void {
+    if (coordinates.length > 0) {
+
+      parts = [];
+      for (let i = 0, max = 25 - 1; i < coordinates.length; i = i + max) {
+        parts.push(coordinates.slice(i, i + max + 1));
+      }
+  
+      this.calculateRoutes(parts, "totalRoute", "blue", 4, 1, (totalDistance: number) => {
+        this.dataVehicleDetails[0]['value'] = (totalDistance / 1000).toFixed(2) + 'km';
+        if (stops.length > 0) {
+          parts = [];
+          for (let i = 0, max = 25 - 1; i < stops.length; i = i + max) {
+            parts.push(stops.slice(i, i + max + 1));
+          }
+          this.startShortestRoutes(parts, "shortestRoute", "red", 8, 2, (shortestDistance: number) => {
+            this.isLoadingVehicleDetails = false;
+            this.dataVehicleDetails[2]['value'] = (shortestDistance / 1000).toFixed(2) + 'km';
+          })
+        } else {
+          this.isLoadingVehicleDetails = false;
+        }
+      });
+    } else if (coordinates.length == 0 && stops.length > 0) {
+      this.isLoadingVehicleDetails = false;
+      this.dataVehicleDetails[0]['value'] = this.labels.noData;
+      this.dataVehicleDetails[2]['value'] = this.labels.noData;
+    } else if (coordinates.length == 0 && stops.length == 0) {
+      this.isLoadingVehicleDetails = false;
+      this.dataVehicleDetails[0]['value'] = this.labels.noData;
+      this.dataVehicleDetails[1]['value'] = this.labels.noData;
+      this.dataVehicleDetails[2]['value'] = this.labels.noData;
+    }
   }
 
   startShortestRoutes(points: Array<any>, typeOfCalc: string, routeColor: string, routeWeight: number, routezIndex: number = 1, callback: Function): void {
@@ -245,9 +248,9 @@ export class AppComponent implements AfterViewInit {
       // Google Maps API doesnt allow to many requests at short times.
       // To avoid this for long point lists, it creates an async queue requests 
       // With independently memory allocation for each request
-      new function(_service_options: object, callback: Function, count: number, typeOfCalc: string, app: AppComponent) {
+      new function(_serviceOptions: object, callback: Function, count: number, typeOfCalc: string, app: AppComponent) {
         setTimeout(() => {
-          app.directionsService.route(_service_options, (response, status) => { 
+          app.directionsService.route(_serviceOptions, (response, status) => { 
             const value = ((count + 1) / points.length) * 100;
             let label: string = "";
             if (typeOfCalc == "totalRoute") {
